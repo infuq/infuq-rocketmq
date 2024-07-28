@@ -93,10 +93,10 @@ public class PullMessageService extends ServiceThread {
         log.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
-            String enablePrint = System.getProperty("enablePrint");
-            if (enablePrint.equals("1")) {
-                System.out.println("拉取消息线程:" + Thread.currentThread().getName());
-            }
+//            String enablePrint = System.getProperty("enablePrint");
+//            if (enablePrint.equals("1")) {
+//                System.out.println("拉取消息线程:" + Thread.currentThread().getName());
+//            }
 
             try {
                 PullRequest pullRequest = this.pullRequestQueue.take();

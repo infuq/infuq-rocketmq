@@ -402,10 +402,10 @@ public abstract class NettyRemotingAbstract {
         final int opaque = request.getOpaque();
 
         try {
-            String enablePrint = System.getProperty("enablePrint");
-            if (enablePrint.equals("1")) {
-                System.out.println("向服务端发送数据" + Thread.currentThread().getName());
-            }
+//            String enablePrint = System.getProperty("enablePrint");
+//            if (enablePrint.equals("1")) {
+//                System.out.println("向服务端发送数据" + Thread.currentThread().getName());
+//            }
 
 
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);

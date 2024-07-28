@@ -15,9 +15,11 @@ public class Producer {
 
     public static void main(String[] args) throws MQClientException, InterruptedException {
 
+        System.setProperty("enablePrint", "0");
+
         DefaultMQProducer producer = new DefaultMQProducer("CID_PRODUCER_ORDER");
 
-        String nameSrvAddr = "192.168.20.36:8876";
+        String nameSrvAddr = "192.168.31.130:9876";
         producer.setNamesrvAddr(nameSrvAddr);
         producer.start();
 
@@ -38,7 +40,7 @@ public class Producer {
                         }
                     }, "12345");
                 }
-
+                Thread.sleep(3000);
                 System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
                 e.printStackTrace();

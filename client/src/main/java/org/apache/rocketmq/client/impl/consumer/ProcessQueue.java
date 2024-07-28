@@ -26,6 +26,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import com.alibaba.fastjson.JSON;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
@@ -78,6 +80,8 @@ public class ProcessQueue {
             return;
         }
 
+        //System.out.println("清除过期消息[" + Thread.currentThread().getName() + "],树:" + JSON.toJSONString(lockTreeMap));
+
         int loop = msgTreeMap.size() < 16 ? msgTreeMap.size() : 16;
         for (int i = 0; i < loop; i++) {
             MessageExt msg = null;
@@ -86,17 +90,17 @@ public class ProcessQueue {
                 try {
                     if (!msgTreeMap.isEmpty()) {
                         String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
-                        long l = Long.parseLong(consumeStartTimeStamp);
-                        if (System.currentTimeMillis() - l > pushConsumer.getConsumeTimeout() * 60 * 1000) {
-                            msg = msgTreeMap.firstEntry().getValue();
+                        if (consumeStartTimeStamp == null
+                                || System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) <= pushConsumer.getConsumeTimeout() * 60 * 1000) {
+                            break;
                         }
+                        msg = msgTreeMap.firstEntry().getValue();
                     } else {
-
                         break;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    System.out.println("出现异常");
+                    System.out.println("出现异常," + e.getMessage());
                 } finally {
                     this.lockTreeMap.readLock().unlock();
                 }
@@ -104,11 +108,17 @@ public class ProcessQueue {
                 log.error("getExpiredMsg exception", e);
             }
 
+            if (msg == null) {
+                return;
+            }
+
             try {
 
+                //log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
+                System.out.println("send expire msg back. topic="+msg.getTopic()+", msgId="+msg.getMsgId()+", storeHost="+msg.getStoreHost()+", queueId="+msg.getQueueId()+", queueOffset=" + msg.getQueueOffset());
                 pushConsumer.sendMessageBack(msg, 3);
                 System.out.println("send expire message back");
-                log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
+
                 try {
                     this.lockTreeMap.writeLock().lockInterruptibly();
                     try {

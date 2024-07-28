@@ -55,6 +55,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledExecutorService cleanExpireMsgExecutors;
 
+    private static volatile int passIndex = 1;
+    private static Object passLock = new Object();
+
     public ConsumeMessageConcurrentlyService(DefaultMQPushConsumerImpl defaultMQPushConsumerImpl,
         MessageListenerConcurrently messageListener) {
         this.defaultMQPushConsumerImpl = defaultMQPushConsumerImpl;
@@ -411,14 +414,17 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
         @Override
         public void run() {
-
-            try {
-                Thread.sleep(3600*1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (passIndex == 1) {
+                System.out.println("线程池中的线程["+Thread.currentThread().getName()+"]被放行,消息数量:" + msgs.size() + ",MID=" + msgs.get(0).getMsgId());
+                passIndex = 2;
+            } else {
+                System.out.println("线程池中的线程["+Thread.currentThread().getName()+"]被阻塞3600s,消息数量:" + msgs.size() + ",MID=" + msgs.get(0).getMsgId());
+                try {
+                    Thread.sleep(3600 * 1000);
+                } catch (Exception e) {
+                }
             }
 
-            System.out.println("线程池中的线程["+Thread.currentThread().getName()+"]开始消费处理消息.");
             if (this.processQueue.isDropped()) {
                 log.info("the message queue not be able to consume, because it's dropped. group={} {}", ConsumeMessageConcurrentlyService.this.consumerGroup, this.messageQueue);
                 return;
@@ -447,7 +453,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             try {
                 if (msgs != null && !msgs.isEmpty()) {
                     for (MessageExt msg : msgs) {
-                        //
+                        // 设置开始消费的时间,清除过期消息时会使用该属性
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }

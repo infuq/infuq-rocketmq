@@ -15,9 +15,9 @@ public class ConcurrentConsumer {
 
     public static void main(String[] args) throws MQClientException {
 
-        //System.out.println(System.getProperty("enablePrint"));
+        System.setProperty("enablePrint", "0");
 
-        String nameSrvAddr = "192.168.20.36:8876";
+        String nameSrvAddr = "192.168.31.130:9876";
 
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("CID_CONSUMER_ORDER");
         consumer.setConsumeTimeout(2);
@@ -31,7 +31,11 @@ public class ConcurrentConsumer {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
 
-                //System.out.println("[" + Thread.currentThread().getName() + "]该批次消息数量=" + msgs.size());
+                System.out.println("[" + Thread.currentThread().getName() + "]调用程序员方法被休眠,模拟执行耗时操作");
+                try {
+                    Thread.sleep(3600 * 1000);
+                } catch (Exception e) {}
+                System.out.println("[" + Thread.currentThread().getName() + "]该批次消息数量=" + msgs.size());
                 for (MessageExt v : msgs) {
                     System.out.println("[" + Thread.currentThread().getName() + "]处理消息: " + new String(v.getBody()) + ", " + JSON.toJSONString(v.getStoreHost()) + ", msgId=" + v.getMsgId() + ", queueId=" + v.getQueueId() + ", tag=" + v.getTags() + ", topic=" + v.getTopic());
                 }
